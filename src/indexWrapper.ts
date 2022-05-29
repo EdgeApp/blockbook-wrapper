@@ -7,6 +7,7 @@ import { getAccountUtxo } from './getAccountUtxo'
 import { getInfo } from './getInfo'
 import { getTransaction } from './getTransaction'
 import { ping } from './ping'
+import { sendTransaction } from './sendTransaction'
 import { asJsonRpc, MethodMap, WrapperIo } from './types'
 import { logger, makeDate } from './util'
 
@@ -44,6 +45,9 @@ const methods: MethodMap = {
   },
   getTransaction: {
     handler: getTransaction
+  },
+  sendTransaction: {
+    handler: sendTransaction
   },
   ping: { handler: ping }
 }
@@ -93,7 +97,9 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): void => {
         // logger(resultString)
         ws.send(resultString, sendErrorHandler)
       })
-      .catch((e: Error) => console.log(e.message))
+      .catch((e: Error) => {
+        console.log(e.message)
+      })
   })
 
   ws.on('close', error => {
