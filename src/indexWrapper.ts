@@ -3,6 +3,7 @@ import { WebSocket, WebSocketServer } from 'ws'
 
 import { getAccountInfo } from './getAccountInfo'
 import { getAccountUtxo } from './getAccountUtxo'
+import { getInfo } from './getInfo'
 // import { handleWsMessage } from './handleMessage'
 import { asJsonRpc, MethodMap, WrapperIo } from './types'
 import { logger, makeDate } from './util'
@@ -13,7 +14,6 @@ const server = new WebSocketServer({ port: 8008 })
 
 server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
   const { socket, url } = req
-  ws.send('hello', () => {})
   if (url !== '/websocket') {
     ws.close(1003, `Invalid path. Only /websocket supported`)
   }
@@ -36,6 +36,9 @@ const methods: MethodMap = {
   },
   getAccountUtxo: {
     handler: getAccountUtxo
+  },
+  getInfo: {
+    handler: getInfo
   }
 }
 
