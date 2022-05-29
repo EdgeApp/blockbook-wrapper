@@ -1,3 +1,5 @@
 {
-  "wsPort": "8008"
+  "wsPort": 8008,
+  "blockbookServer": "https://bsv.nownodes.io",
+  "nowNodesApiKey": "xxx"
 }

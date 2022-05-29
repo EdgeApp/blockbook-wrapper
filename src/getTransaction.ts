@@ -2,14 +2,14 @@ import { asObject, asString } from 'cleaners'
 import fetch from 'node-fetch'
 import parse from 'url-parse'
 
+import { config } from './config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
-import { cleanObject } from './util'
 
 export const asGetTransactionParams = asObject({
   txid: asString
 })
 
-const server = 'https://btc1.trezor.io'
+const server = config.blockbookServer
 
 export type GetTransactionParams = ReturnType<typeof asGetTransactionParams>
 
@@ -24,7 +24,7 @@ export const getTransaction = async (
   parsed.set('pathname', `api/v2/tx/${txid}`)
 
   const headers = {
-    // 'x-api-key': apiKey
+    'api-key': config.nowNodesApiKey
   }
   const options = { method: 'GET', headers: headers }
 

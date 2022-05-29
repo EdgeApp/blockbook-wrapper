@@ -2,6 +2,7 @@ import { asBoolean, asObject, asOptional, asString } from 'cleaners'
 import fetch from 'node-fetch'
 import parse from 'url-parse'
 
+import { config } from './config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
 import { cleanObject } from './util'
 
@@ -13,7 +14,7 @@ export const asGetAccountInfoParams = asObject({
   // pageSize: asOptional(asNumber)
 })
 
-const server = 'https://btc1.trezor.io'
+const server = config.blockbookServer
 
 export type GetAccountInfoParams = ReturnType<typeof asGetAccountInfoParams>
 
@@ -34,7 +35,7 @@ export const getAccountUtxo = async (
   // io.logger('getAccountUtxo href:', parsed.href)
 
   const headers = {
-    // 'x-api-key': apiKey
+    'api-key': config.nowNodesApiKey
   }
   const options = { method: 'GET', headers: headers }
 

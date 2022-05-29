@@ -1,6 +1,7 @@
 import { IncomingMessage } from 'http'
 import { WebSocket, WebSocketServer } from 'ws'
 
+import { config } from './config'
 import { getAccountInfo } from './getAccountInfo'
 import { getAccountUtxo } from './getAccountUtxo'
 import { getInfo } from './getInfo'
@@ -11,7 +12,7 @@ import { logger, makeDate } from './util'
 
 // const CONFIG = require('../config.json')
 
-const server = new WebSocketServer({ port: 8008 })
+const server = new WebSocketServer({ port: config.wsPort })
 
 server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
   const { socket, url } = req
