@@ -4,7 +4,8 @@ import { WebSocket, WebSocketServer } from 'ws'
 import { getAccountInfo } from './getAccountInfo'
 import { getAccountUtxo } from './getAccountUtxo'
 import { getInfo } from './getInfo'
-// import { handleWsMessage } from './handleMessage'
+import { getTransaction } from './getTransaction'
+import { ping } from './ping'
 import { asJsonRpc, MethodMap, WrapperIo } from './types'
 import { logger, makeDate } from './util'
 
@@ -39,7 +40,11 @@ const methods: MethodMap = {
   },
   getInfo: {
     handler: getInfo
-  }
+  },
+  getTransaction: {
+    handler: getTransaction
+  },
+  ping: { handler: ping }
 }
 
 const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
