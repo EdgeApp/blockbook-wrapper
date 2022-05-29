@@ -11,9 +11,7 @@ export interface JsonRpcResponse {
   data: Object
 }
 export interface MethodMap {
-  [methodName: string]: {
-    handler: (...args) => Promise<JsonRpcResponse>
-  }
+  [methodName: string]: (...args) => Promise<JsonRpcResponse>
 }
 
 export interface WrapperIo {
@@ -21,14 +19,15 @@ export interface WrapperIo {
   ws: WebSocket
 }
 
+export interface GetInfoResponse {
+  bestHeight: number
+  bestHash: string
+}
 export interface WsConnection {
   addrPort: string
   initWs: () => void
   stopWs: () => void
-}
-export interface GetInfoResponse {
-  bestHeight: number
-  bestHash: string
+  updateBlockHeight: (param: GetInfoResponse) => void
 }
 
 export type GetInfoEngineParams = (response: GetInfoResponse) => void

@@ -11,11 +11,13 @@ import { sendTransaction } from './sendTransaction'
 import {
   asJsonRpc,
   GetInfoResponse,
+  JsonRpc,
+  JsonRpcResponse,
   MethodMap,
   WrapperIo,
   WsConnection
 } from './types'
-import { logger, makeDate } from './util'
+import { logger, makeDate, snooze } from './util'
 
 // const CONFIG = require('../config.json')
 
@@ -41,44 +43,48 @@ server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
   }
 })
 
-const methods: MethodMap = {
-  getAccountInfo: {
-    handler: getAccountInfo
-  },
-  getAccountUtxo: {
-    handler: getAccountUtxo
-  },
-  getInfo: {
-    handler: getInfo
-  },
-  getTransaction: {
-    handler: getTransaction
-  },
-  sendTransaction: {
-    handler: sendTransaction
-  },
-  ping: { handler: ping }
-}
-
-const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
-  const cleanData = asJsonRpc(data)
-  io.logger(`Received ID:${cleanData.id} Method:${cleanData.method}`)
-  const { params = 'NO_PARAMS' } = cleanData
-  io.logger(` Params:${JSON.stringify(params)}`)
-  const method = methods[cleanData.method]
-  if (method == null) {
-    throw new Error('Invalid method: ' + cleanData.method)
-  }
-  const out = await method.handler(io, cleanData)
-  io.logger(`Responded to ID:${cleanData.id} Method:${cleanData.method}`)
-  io.logger(`   ${JSON.stringify(out).slice(0, 75)}`)
-  return out
-}
-
 const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
   const logger = (...args): void => {
     const d = makeDate()
     console.log(`${d} ${addrPort}`, ...args)
+  }
+
+  let subscribeNewBlockId: string = ''
+
+  const methods: MethodMap = {
+    getAccountInfo,
+    getAccountUtxo,
+    getInfo,
+    getTransaction,
+    sendTransaction,
+    ping,
+    subscribeNewBlock: async (
+      io: WrapperIo,
+      data: JsonRpc
+    ): Promise<JsonRpcResponse> => {
+      await snooze(0) // TS hack
+      subscribeNewBlockId = data.id
+      const out: JsonRpcResponse = {
+        id: data.id,
+        data: { subscribed: true }
+      }
+      return out
+    }
+  }
+
+  const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
+    const cleanData = asJsonRpc(data)
+    io.logger(`Received ID:${cleanData.id} Method:${cleanData.method}`)
+    const { params = 'NO_PARAMS' } = cleanData
+    io.logger(` Params:${JSON.stringify(params)}`)
+    const method = methods[cleanData.method]
+    if (method == null) {
+      throw new Error('Invalid method: ' + cleanData.method)
+    }
+    const out = await method(io, cleanData)
+    io.logger(`Responded to ID:${cleanData.id} Method:${cleanData.method}`)
+    io.logger(`   ${JSON.stringify(out).slice(0, 75)}`)
+    return out
   }
 
   const io: WrapperIo = {
@@ -134,13 +140,31 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
     delete wsConnections[addrPort]
   }
 
+  const updateBlockHeight = (param: GetInfoResponse): void => {
+    if (subscribeNewBlockId !== '') {
+      const response: JsonRpcResponse = {
+        id: subscribeNewBlockId,
+        data: {
+          height: param.bestHeight,
+          hash: param.bestHash
+        }
+      }
+      ws.send(JSON.stringify(response), sendErrorHandler)
+    }
+  }
+
   const out: WsConnection = {
     addrPort,
     initWs,
-    stopWs
+    stopWs,
+    updateBlockHeight
   }
 
   return out
 }
 
-getInfoEngine((response: GetInfoResponse) => undefined)
+getInfoEngine((response: GetInfoResponse) => {
+  for (const addrPort in wsConnections) {
+    wsConnections[addrPort].updateBlockHeight(response)
+  }
+})
