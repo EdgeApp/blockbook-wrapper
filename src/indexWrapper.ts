@@ -4,11 +4,17 @@ import { WebSocket, WebSocketServer } from 'ws'
 import { config } from './config'
 import { getAccountInfo } from './getAccountInfo'
 import { getAccountUtxo } from './getAccountUtxo'
-import { getInfo } from './getInfo'
+import { getInfo, getInfoEngine } from './getInfo'
 import { getTransaction } from './getTransaction'
 import { ping } from './ping'
 import { sendTransaction } from './sendTransaction'
-import { asJsonRpc, MethodMap, WrapperIo, WsConnection } from './types'
+import {
+  asJsonRpc,
+  GetInfoResponse,
+  MethodMap,
+  WrapperIo,
+  WsConnection
+} from './types'
 import { logger, makeDate } from './util'
 
 // const CONFIG = require('../config.json')
@@ -136,3 +142,5 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
 
   return out
 }
+
+getInfoEngine((response: GetInfoResponse) => undefined)

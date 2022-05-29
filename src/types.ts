@@ -26,3 +26,9 @@ export interface WsConnection {
   initWs: () => void
   stopWs: () => void
 }
+export interface GetInfoResponse {
+  bestHeight: number
+  bestHash: string
+}
+
+export type GetInfoEngineParams = (response: GetInfoResponse) => void
