@@ -8,12 +8,14 @@ import { getInfo } from './getInfo'
 import { getTransaction } from './getTransaction'
 import { ping } from './ping'
 import { sendTransaction } from './sendTransaction'
-import { asJsonRpc, MethodMap, WrapperIo } from './types'
+import { asJsonRpc, MethodMap, WrapperIo, WsConnection } from './types'
 import { logger, makeDate } from './util'
 
 // const CONFIG = require('../config.json')
 
 const server = new WebSocketServer({ port: config.wsPort })
+
+const wsConnections: { [addrPort: string]: WsConnection } = {}
 
 server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
   const { socket, url } = req
@@ -26,11 +28,11 @@ server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
     const addrPort = `${address}:${port}`
     logger(`Connection made ${addrPort}`)
 
-    makeWsConnection(ws, addrPort)
+    const wsc = makeWsConnection(ws, addrPort)
+    wsConnections[addrPort] = wsc
   } catch (e) {
     ws.close(1011, 'Internal error')
   }
-  // Parse url
 })
 
 const methods: MethodMap = {
@@ -67,21 +69,22 @@ const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
   return out
 }
 
-const makeWsConnection = (ws: WebSocket, addrPort: string): void => {
+const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
   const logger = (...args): void => {
     const d = makeDate()
     console.log(`${d} ${addrPort}`, ...args)
   }
 
   const io: WrapperIo = {
-    logger
+    logger,
+    ws
   }
 
   const sendErrorHandler = (error?: Error): void => {
     if (error != null) {
       logger('Error sending data to WS', error.message)
       // Delete connection
-      deleteWsConnection(addrPort)
+      stopWs()
     } else {
       // logger('Success sending data to WS')
     }
@@ -95,7 +98,7 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): void => {
       // logger('Received JSON:', parsedData)
     } catch (e) {
       logger('Invalid JSON:', messageString)
-      ws.close(1007, 'Invalid JSON')
+      stopWs(1007, 'Invalid JSON')
     }
     handleWsMessage(io, parsedData)
       .then(result => {
@@ -110,21 +113,26 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): void => {
 
   ws.on('close', error => {
     logger('Websocket close', error)
-    deleteWsConnection(addrPort)
+    stopWs()
   })
 
   ws.on('error', error => {
     logger('Websocket error', error)
-    deleteWsConnection(addrPort)
+    stopWs()
   })
 
-  // ws.send(data, sendErrorHandler)
-}
+  const initWs = (): void => undefined
 
-function deleteWsConnection(_addrPort: string): void {
-  // const c = wsConnections[addrPort]
-  // if (c) {
-  //   c.ws.close()
-  //   delete wsConnections[addrPort]
-  // }
+  const stopWs = (errorCode?: number, errorMessage?: string): void => {
+    ws.close(errorCode, errorMessage)
+    delete wsConnections[addrPort]
+  }
+
+  const out: WsConnection = {
+    addrPort,
+    initWs,
+    stopWs
+  }
+
+  return out
 }

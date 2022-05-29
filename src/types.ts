@@ -18,4 +18,11 @@ export interface MethodMap {
 
 export interface WrapperIo {
   logger: (...args) => void
+  ws: WebSocket
+}
+
+export interface WsConnection {
+  addrPort: string
+  initWs: () => void
+  stopWs: () => void
 }
