@@ -2,6 +2,7 @@ import { IncomingMessage } from 'http'
 import { WebSocket, WebSocketServer } from 'ws'
 
 import { getAccountInfo } from './getAccountInfo'
+import { getAccountUtxo } from './getAccountUtxo'
 // import { handleWsMessage } from './handleMessage'
 import { asJsonRpc, MethodMap, WrapperIo } from './types'
 import { logger, makeDate } from './util'
@@ -32,13 +33,19 @@ server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
 const methods: MethodMap = {
   getAccountInfo: {
     handler: getAccountInfo
+  },
+  getAccountUtxo: {
+    handler: getAccountUtxo
   }
 }
 
 const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
   const cleanData = asJsonRpc(data)
+  io.logger(`Received ID:${cleanData.id} Method:${cleanData.method}`)
   const method = methods[cleanData.method]
-  return method.handler(io, cleanData)
+  const out = method.handler(io, cleanData)
+  io.logger(`Responded to ID:${cleanData.id} Method:${cleanData.method}`)
+  return out
 }
 
 const makeWsConnection = (ws: WebSocket, addrPort: string): void => {
@@ -53,11 +60,11 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): void => {
 
   const sendErrorHandler = (error?: Error): void => {
     if (error != null) {
-      logger('Error sending data to WS')
+      logger('Error sending data to WS', error.message)
       // Delete connection
       deleteWsConnection(addrPort)
     } else {
-      logger('Success sending data to WS')
+      // logger('Success sending data to WS')
     }
   }
 
