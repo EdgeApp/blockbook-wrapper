@@ -40,11 +40,19 @@ export const getAccountUtxo = async (
   const options = { method: 'GET', headers: headers }
 
   let resultJSON
-  const result = await fetch(parsed.href, options)
+  let result
+  try {
+    result = await fetch(parsed.href, options)
+  } catch (e) {
+    io.logger(e)
+    throw e
+  }
   if (result.ok === true) {
     resultJSON = await result.json()
     // io.logger(JSON.stringify(resultJSON, null, 2))
   } else {
+    const r = await result.text()
+    io.logger(r)
     throw new Error('getAccountUtxo failed')
   }
   const out: JsonRpcResponse = {

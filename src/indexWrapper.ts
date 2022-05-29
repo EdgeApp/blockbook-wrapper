@@ -55,9 +55,15 @@ const methods: MethodMap = {
 const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
   const cleanData = asJsonRpc(data)
   io.logger(`Received ID:${cleanData.id} Method:${cleanData.method}`)
+  const { params = 'NO_PARAMS' } = cleanData
+  io.logger(` Params:${JSON.stringify(params)}`)
   const method = methods[cleanData.method]
-  const out = method.handler(io, cleanData)
+  if (method == null) {
+    throw new Error('Invalid method: ' + cleanData.method)
+  }
+  const out = await method.handler(io, cleanData)
   io.logger(`Responded to ID:${cleanData.id} Method:${cleanData.method}`)
+  io.logger(`   ${JSON.stringify(out).slice(0, 75)}`)
   return out
 }
 
