@@ -1,4 +1,12 @@
-import { asObject, asString, asUnknown } from 'cleaners'
+import {
+  asArray,
+  asBoolean,
+  asNumber,
+  asObject,
+  asOptional,
+  asString,
+  asUnknown
+} from 'cleaners'
 
 export const asJsonRpc = asObject({
   id: asString,
@@ -16,7 +24,7 @@ export interface MethodMap {
 
 export interface WrapperIo {
   logger: (...args) => void
-  ws: WebSocket
+  sendWs: (arg: Object) => void
 }
 
 const asGetInfoResponse = asObject({
@@ -45,3 +53,64 @@ export interface WsConnection {
 }
 
 export type GetInfoEngineParams = (response: GetInfoResponse) => void
+
+export const asSubscribeAddressesParams = asObject({
+  addresses: asArray(asString)
+})
+
+export type UnsubscribeFunc = () => void
+
+export const asGetAccountTx = asObject({
+  txid: asString,
+  version: asNumber,
+  vin: asArray(
+    asObject({
+      txid: asString,
+      vout: asNumber,
+      sequence: asNumber,
+      n: asNumber,
+      addresses: asArray(asString),
+      isAddress: asBoolean,
+      value: asString,
+      hex: asString
+    })
+  ),
+  vout: asArray(
+    asObject({
+      value: asString,
+      n: asNumber,
+      hex: asString,
+      addresses: asArray(asString),
+      isAddress: asBoolean
+    })
+  ),
+  blockHeight: asNumber,
+  confirmations: asNumber,
+  blockTime: asNumber,
+  value: asString,
+  valueIn: asString,
+  fees: asString,
+  hex: asString
+})
+
+export type GetAccountTx = ReturnType<typeof asGetAccountTx>
+
+export const asGetAccountInfo = asObject({
+  page: asNumber,
+  totalPages: asNumber,
+  itemsOnPage: asNumber,
+  address: asString,
+  balance: asOptional(asString),
+  totalReceived: asString,
+  totalSent: asString,
+  unconfirmedBalance: asString,
+  unconfirmedTxs: asNumber,
+  txs: asNumber,
+  transactions: asOptional(asArray(asGetAccountTx))
+})
+
+export type GetAccountInfo = ReturnType<typeof asGetAccountInfo>
+export interface SubscribeAddressResponse {
+  address: string
+  tx: GetAccountTx
+}

@@ -8,6 +8,7 @@ import { getInfo, getInfoEngine } from './getInfo'
 import { getTransaction } from './getTransaction'
 import { ping } from './ping'
 import { sendTransaction } from './sendTransaction'
+import { subscribeAddressesEngine } from './subscribeAddresses'
 import {
   asJsonRpc,
   GetInfoResponse,
@@ -50,6 +51,7 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
   }
 
   let subscribeNewBlockId: string = ''
+  let subscribeAddressesStop
 
   const methods: MethodMap = {
     getAccountInfo,
@@ -58,6 +60,20 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
     getTransaction,
     sendTransaction,
     ping,
+    subscribeAddresses: async (
+      io: WrapperIo,
+      data: JsonRpc
+    ): Promise<JsonRpcResponse> => {
+      await snooze(0) // TS hack
+      if (subscribeAddressesStop != null) subscribeAddressesStop()
+      subscribeAddressesStop = subscribeAddressesEngine(io, data)
+
+      const out: JsonRpcResponse = {
+        id: data.id,
+        data: { subscribed: true }
+      }
+      return out
+    },
     subscribeNewBlock: async (
       io: WrapperIo,
       data: JsonRpc
@@ -76,7 +92,7 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
     const cleanData = asJsonRpc(data)
     io.logger(`Received ID:${cleanData.id} Method:${cleanData.method}`)
     const { params = 'NO_PARAMS' } = cleanData
-    io.logger(` Params:${JSON.stringify(params)}`)
+    io.logger(` Params:${JSON.stringify(params).slice(0, 75)}`)
     const method = methods[cleanData.method]
     if (method == null) {
       throw new Error('Invalid method: ' + cleanData.method)
@@ -89,7 +105,9 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
 
   const io: WrapperIo = {
     logger,
-    ws
+    sendWs: (data: Object) => {
+      ws.send(JSON.stringify(data), sendErrorHandler)
+    }
   }
 
   const sendErrorHandler = (error?: Error): void => {
@@ -137,6 +155,7 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
 
   const stopWs = (errorCode?: number, errorMessage?: string): void => {
     ws.close(errorCode, errorMessage)
+    if (subscribeAddressesStop != null) subscribeAddressesStop()
     delete wsConnections[addrPort]
   }
 
