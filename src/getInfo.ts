@@ -14,17 +14,32 @@ import { makeDate, snooze } from './util'
 
 const asV2ApiResponse = asObject({
   blockbook: asObject({
+    coin: asString,
+    decimals: asNumber,
+    version: asString,
     bestHeight: asNumber
   }),
   backend: asObject({
+    version: asString,
+    subversion: asString,
     bestBlockHash: asString
   })
 })
 export type V2ApiResponse = ReturnType<typeof asV2ApiResponse>
 
-const lastResponse: GetInfoResponse = {
+export const lastResponse: GetInfoResponse = {
+  name: '',
+  shortcut: config.shortcut,
+  decimals: 0,
+  version: '',
+  block0Hash: '',
+  testnet: false,
   bestHeight: -1,
-  bestHash: ''
+  bestHash: '',
+  backend: {
+    version: '',
+    subversion: ''
+  }
 }
 const server = config.blockbookServer
 
@@ -67,13 +82,28 @@ const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
   } else {
     throw new Error('getInfoInner failed')
   }
-  const bestHeight = cleanedResult.blockbook.bestHeight
-  const bestHash = cleanedResult.backend.bestBlockHash
-  if (lastResponse.bestHeight !== bestHeight) {
-    lastResponse.bestHeight = bestHeight
-    lastResponse.bestHash = bestHash
-    log(`New blockHeight ${bestHeight} ${bestHash}`)
-    const out = { bestHeight, bestHash }
+
+  const { blockbook, backend } = cleanedResult
+  // const name = cleanedResult.blockbook.coin
+  // const bestHeight = cleanedResult.blockbook.bestHeight
+  // const bestHash = cleanedResult.backend.bestBlockHash
+
+  if (lastResponse.bestHeight < 0) {
+    lastResponse.name = blockbook.coin
+    lastResponse.decimals = blockbook.decimals
+    lastResponse.version = blockbook.version
+    lastResponse.backend = {
+      version: backend.version,
+      subversion: backend.subversion
+    }
+  }
+
+  if (lastResponse.bestHeight !== blockbook.bestHeight) {
+    lastResponse.bestHeight = blockbook.bestHeight
+    lastResponse.bestHash = backend.bestBlockHash
+
+    log(`New blockHeight ${lastResponse.bestHeight} ${lastResponse.bestHash}`)
+    const out = { ...lastResponse }
     cb(out)
   }
 }

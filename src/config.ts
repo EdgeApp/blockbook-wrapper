@@ -5,6 +5,7 @@ import c from '../config.json'
 const asWrapperConfig = asObject({
   blockbookServer: asString,
   nowNodesApiKey: asString,
+  shortcut: asString,
   wsPort: asNumber
 })
 

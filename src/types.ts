@@ -19,10 +19,24 @@ export interface WrapperIo {
   ws: WebSocket
 }
 
-export interface GetInfoResponse {
-  bestHeight: number
-  bestHash: string
-}
+const asGetInfoResponse = asObject({
+  name: asString,
+  shortcut: asString,
+  decimals: asNumber,
+  version: asString,
+  bestHeight: asNumber,
+  bestHash: asString,
+  block0Hash: asString,
+  testnet: asBoolean,
+  backend: asOptional(
+    asObject({
+      version: asString,
+      subversion: asString
+    })
+  )
+})
+
+export type GetInfoResponse = ReturnType<typeof asGetInfoResponse>
 export interface WsConnection {
   addrPort: string
   initWs: () => void
