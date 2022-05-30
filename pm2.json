@@ -1,22 +1,10 @@
 {
   "apps": [
     {
-      "name": "reportsQuery",
-      "script": "lib/indexEngine.js",
-      "error_file": "logs/reportsQuery.error.log",
-      "out_file": "logs/reportsQuery.out.log"
-    },
-    {
-      "name": "reportsRates",
-      "script": "lib/indexRatesEngine.js",
-      "error_file": "logs/reportsRates.error.log",
-      "out_file": "logs/reportsRates.out.log"
-    },
-    {
-      "name": "reportsApi",
-      "script": "lib/indexApi.js",
-      "error_file": "logs/reportsApi.error.log",
-      "out_file": "logs/reportsApi.out.log"
+      "name": "wrapperServer",
+      "script": "lib/indexWrapper.js",
+      "error_file": "logs/error.log",
+      "out_file": "logs/out.log"
     }
   ]
 }
