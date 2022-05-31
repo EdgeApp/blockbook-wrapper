@@ -1,5 +1,6 @@
 # blockbook-wrapper
 
+Exposes a partial Blockbook compatible websocket API wrapping an HTTP-only Blockbook API server
 
 #### Installation
 
