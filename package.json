@@ -43,6 +43,7 @@
     "assert": "^2.0.0",
     "browserify-zlib": "^0.2.0",
     "chai": "^4.3.4",
+    "cleaner-config": "^0.1.7",
     "eslint": ">=6.2.2",
     "eslint-config-standard-kit": ">=0.14.4",
     "eslint-plugin-import": ">=2.18.0",
