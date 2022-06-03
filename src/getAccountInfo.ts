@@ -5,6 +5,7 @@ import parse from 'url-parse'
 import { config } from './config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
 import { cleanObject } from './util'
+import { randomElement } from './util/randomElement'
 
 export const asGetAccountInfoParams = asObject({
   descriptor: asString,
@@ -34,7 +35,7 @@ export const getAccountInfo = async (
   // io.logger('getAccountInfo href:', parsed.href)
 
   const headers = {
-    'api-key': config.nowNodesApiKey
+    'api-key': randomElement(config.nowNodesApiKeys)
   }
   const options = { method: 'GET', headers: headers }
 

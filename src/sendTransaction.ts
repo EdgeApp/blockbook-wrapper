@@ -4,6 +4,7 @@ import parse from 'url-parse'
 
 import { config } from './config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
+import { randomElement } from './util/randomElement'
 
 const asSendTransactionParams = asObject({
   hex: asString
@@ -27,7 +28,7 @@ export const sendTransaction = async (
   parsed.set('pathname', `api/v2/sendtx/${hex}`)
 
   const headers = {
-    'api-key': config.nowNodesApiKey
+    'api-key': randomElement(config.nowNodesApiKeys)
   }
   const options = { method: 'GET', headers: headers }
 

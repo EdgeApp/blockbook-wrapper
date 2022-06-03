@@ -11,6 +11,7 @@ import {
   WrapperIo
 } from './types'
 import { makeDate, snooze } from './util'
+import { randomElement } from './util/randomElement'
 
 const asV2ApiResponse = asObject({
   blockbook: asObject({
@@ -70,7 +71,7 @@ const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
   parsed.set('pathname', `api/v2`)
 
   const headers = {
-    'api-key': config.nowNodesApiKey
+    'api-key': randomElement(config.nowNodesApiKeys)
   }
   const options = { method: 'GET', headers: headers }
 

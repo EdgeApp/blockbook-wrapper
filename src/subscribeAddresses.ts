@@ -13,6 +13,7 @@ import {
   WrapperIo
 } from './types'
 import { snooze } from './util'
+import { randomElement } from './util/randomElement'
 
 export const asSubscribeAddressesParams = asObject({
   addresses: asArray(asString)
@@ -37,7 +38,7 @@ const queryAddress = async (
   parsed.set('query', queryParams)
 
   const headers = {
-    'api-key': config.nowNodesApiKey
+    'api-key': randomElement(config.nowNodesApiKeys)
   }
   const options = { method: 'GET', headers: headers }
 

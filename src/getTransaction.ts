@@ -4,6 +4,7 @@ import parse from 'url-parse'
 
 import { config } from './config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
+import { randomElement } from './util/randomElement'
 
 export const asGetTransactionParams = asObject({
   txid: asString
@@ -24,7 +25,7 @@ export const getTransaction = async (
   parsed.set('pathname', `api/v2/tx/${txid}`)
 
   const headers = {
-    'api-key': config.nowNodesApiKey
+    'api-key': randomElement(config.nowNodesApiKeys)
   }
   const options = { method: 'GET', headers: headers }
 
