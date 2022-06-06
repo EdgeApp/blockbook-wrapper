@@ -32,7 +32,7 @@ export const getTransaction = async (
   const result = await fetch(parsed.href, options)
   if (result.ok === true) {
     resultJSON = await result.json()
-    // io.logger(JSON.stringify(resultJSON, null, 2))
+    io.logger.debug({ msg: 'getTransaction results', resultJSON })
   } else {
     throw new Error('getAccountInfo failed')
   }

@@ -31,7 +31,7 @@ export const getAccountInfo = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/address/${address}`)
   parsed.set('query', queryParams)
-  // io.logger('getAccountInfo href:', parsed.href)
+  io.logger.debug({ href: parsed.href }, 'getAccountInfo')
 
   const headers = {
     'api-key': config.nowNodesApiKey
@@ -42,7 +42,7 @@ export const getAccountInfo = async (
   const result = await fetch(parsed.href, options)
   if (result.ok === true) {
     resultJSON = await result.json()
-    // io.logger(JSON.stringify(resultJSON, null, 2))
+    io.logger.debug(resultJSON, 'getAccountInfo')
   } else {
     throw new Error('getAccountInfo failed')
   }

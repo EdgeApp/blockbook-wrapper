@@ -7,6 +7,7 @@ import {
   asString,
   asUnknown
 } from 'cleaners'
+import { Logger } from 'pino'
 
 export const asJsonRpc = asObject({
   id: asString,
@@ -23,7 +24,7 @@ export interface MethodMap {
 }
 
 export interface WrapperIo {
-  logger: (...args) => void
+  logger: Logger<any>
   sendWs: (arg: Object) => void
 }
 

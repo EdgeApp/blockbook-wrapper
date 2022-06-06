@@ -10,7 +10,7 @@ import {
   JsonRpcResponse,
   WrapperIo
 } from './types'
-import { makeDate, snooze } from './util'
+import { pinoLogger, snooze } from './util'
 
 const asV2ApiResponse = asObject({
   blockbook: asObject({
@@ -60,11 +60,6 @@ export const getInfo = async (
   return out
 }
 
-const log = (...args): void => {
-  const d = makeDate()
-  console.log(`${d}`, ...args)
-}
-
 const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2`)
@@ -102,7 +97,9 @@ const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
     lastResponse.bestHeight = blockbook.bestHeight
     lastResponse.bestHash = backend.bestBlockHash
 
-    log(`New blockHeight ${lastResponse.bestHeight} ${lastResponse.bestHash}`)
+    pinoLogger.info(
+      `New blockHeight ${lastResponse.bestHeight} ${lastResponse.bestHash}`
+    )
     const out = { ...lastResponse }
     cb(out)
   }
@@ -111,7 +108,7 @@ const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
 export const getInfoEngine = (cb: GetInfoEngineParams): void => {
   getInfoInner(cb)
     .catch(e => {
-      log(e)
+      pinoLogger.error(e)
     })
     .finally(() => {
       setTimeout(() => {

@@ -42,7 +42,7 @@ const queryAddress = async (
   const options = { method: 'GET', headers: headers }
 
   let resultJSON: GetAccountInfo
-  // io.logger(`queryAddress ${address} ${from.toString()}`)
+  io.logger.info({ msg: 'address query init', address, from })
   const result = await fetch(parsed.href, options).catch(error => ({
     ok: false,
     error
@@ -52,16 +52,22 @@ const queryAddress = async (
       const r = await result.json()
       resultJSON = asGetAccountInfo(r)
     } catch (err) {
-      // io.logger(`queryAddress ERROR ${address} ${err}`)
+      io.logger.error({
+        err,
+        where: 'queryAddress response parsing',
+        address
+      })
       return
     }
   } else {
-    // io.logger(`queryAddress FAIL ${address} ${result.error}`)
+    io.logger.warn({
+      err: result.error,
+      where: 'queryAddress query error response',
+      address
+    })
     return
   }
-  // io.logger(
-  //   `queryAddress SUCCESS ${address} ${JSON.stringify(resultJSON).slice(0, 30)}`
-  // )
+  io.logger.info({ msg: 'address query success', address, resultJSON })
   return resultJSON
 }
 
@@ -101,11 +107,11 @@ export const subscribeAddressesEngine = (
                 tx
               }
               const out = { id, data: dataField }
-              io.logger(
-                `subscribeAddresses New tx at ${blockHeight.toString()} ${address} ${
-                  tx.txid
-                }`
-              )
+              io.logger.info({
+                msg: 'subscribeAddresses new tx',
+                blockHeight,
+                address
+              })
               io.sendWs(out)
             }
           }
@@ -117,7 +123,9 @@ export const subscribeAddressesEngine = (
       doStop = stop
     }
   }
-  looper().catch(e => io.logger(e))
+  looper().catch(err =>
+    io.logger.error({ err, where: 'subscribeAddressesEngine looper crash' })
+  )
 
   return () => {
     stop = true

@@ -32,7 +32,7 @@ export const getAccountUtxo = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/utxo/${address}`)
   parsed.set('query', queryParams)
-  // io.logger('getAccountUtxo href:', parsed.href)
+  io.logger.debug('getAccountUtxo href:', parsed.href)
 
   const headers = {
     'api-key': config.nowNodesApiKey
@@ -44,15 +44,15 @@ export const getAccountUtxo = async (
   try {
     result = await fetch(parsed.href, options)
   } catch (e) {
-    io.logger(e)
+    io.logger.error(e)
     throw e
   }
   if (result.ok === true) {
     resultJSON = await result.json()
-    // io.logger(JSON.stringify(resultJSON, null, 2))
+    io.logger.debug({ msg: 'getAccountUtxo results', resultJSON })
   } else {
     const r = await result.text()
-    io.logger(r)
+    io.logger.info(r)
     throw new Error('getAccountUtxo failed')
   }
   const out: JsonRpcResponse = {
