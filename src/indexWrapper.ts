@@ -142,7 +142,25 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
         ws.send(resultString, sendErrorHandler)
       })
       .catch((err: Error) => {
-        logger.error({ e: err, where: 'handleWsMessage catch' })
+        const id = parsedData?.id
+        logger.error({
+          err,
+          where: 'handleWsMessage error',
+          id
+        })
+        if (id != null) {
+          const errorMessage: string =
+            err instanceof Error ? err.message : 'Unknown error'
+          const resultString = JSON.stringify({
+            id,
+            data: {
+              error: {
+                message: `Failed to wrap JSON-RPC call: ${errorMessage}`
+              }
+            }
+          })
+          ws.send(resultString, sendErrorHandler)
+        }
       })
   })
 
