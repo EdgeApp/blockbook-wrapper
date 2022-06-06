@@ -27,6 +27,13 @@ Install pm2 log rotation (note: the command is pm2 instead of npm)
 
     sudo pm2 install pm2-logrotate
 
+#### Configure
+
+This project uses [cleaner-config](https://www.npmjs.com/package/cleaner-config) to automate config file management.
+Run this command to create the `config.json` file template and edit as necessary.
+
+    yarn configure
+
 #### Running Source
 
     yarn start

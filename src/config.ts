@@ -1,12 +1,11 @@
-import { asNumber, asObject, asString } from 'cleaners'
+import { makeConfig } from 'cleaner-config'
+import { asNumber, asObject, asOptional, asString } from 'cleaners'
 
-import c from '../config.json'
-
-const asWrapperConfig = asObject({
-  blockbookServer: asString,
-  nowNodesApiKey: asString,
-  shortcut: asString,
-  wsPort: asNumber
+const asConfig = asObject({
+  blockbookServer: asOptional(asString, 'https://bsv.nownodes.io'),
+  nowNodesApiKey: asOptional(asString, 'xxx'),
+  shortcut: asOptional(asString, ''),
+  wsPort: asOptional(asNumber, 8008)
 })
 
-export const config = asWrapperConfig(c)
+export const config = makeConfig(asConfig, 'config.json')
