@@ -15,10 +15,17 @@ export const asJsonRpc = asObject({
   params: asUnknown
 })
 export type JsonRpc = ReturnType<typeof asJsonRpc>
-export interface JsonRpcResponse {
+export interface JsonRpcSuccessResponse {
   id: string
   data: Object
 }
+export interface JsonRpcErrorResponse {
+  id: string
+  error: {
+    message: string
+  }
+}
+export type JsonRpcResponse = JsonRpcSuccessResponse | JsonRpcErrorResponse
 export interface MethodMap {
   [methodName: string]: (...args) => Promise<JsonRpcResponse>
 }

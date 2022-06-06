@@ -31,16 +31,32 @@ export const sendTransaction = async (
   }
   const options = { method: 'GET', headers: headers }
 
-  let resultJSON
-  const result = await fetch(parsed.href, options)
-  if (result.ok === true) {
-    resultJSON = await result.json()
-  } else {
-    throw new Error('sendTransaction failed')
+  const response = await fetch(parsed.href, options)
+
+  const responseJson = await response.json().catch(async err => {
+    const responseText = await response.text()
+    io.logger.error({
+      err,
+      where: 'sendTransaction JSON parse error',
+      responText: responseText
+    })
+    return {
+      error: 'Failed to parse JSON from wrapped blockbook server'
+    }
+  })
+
+  if (responseJson.error != null) {
+    return {
+      id: data.id,
+      error: {
+        message: responseJson.error
+      }
+    }
   }
+
   const out: JsonRpcResponse = {
     id: data.id,
-    data: resultJSON
+    data: responseJson
   }
   return out
 }
