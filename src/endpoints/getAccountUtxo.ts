@@ -4,7 +4,7 @@ import parse from 'url-parse'
 
 import { config } from '../config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
-import { cleanObject } from '../util'
+import { cleanObject } from '../util/cleanObject'
 
 export const asGetAccountInfoParams = asObject({
   descriptor: asString,

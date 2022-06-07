@@ -18,7 +18,8 @@ import {
   WrapperIo,
   WsConnection
 } from './types'
-import { pinoLogger, snooze } from './util'
+import { pinoLogger } from './util/pinoLogger'
+import { snooze } from './util/snooze'
 
 // const CONFIG = require('../config.json')
 

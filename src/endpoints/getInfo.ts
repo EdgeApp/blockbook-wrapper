@@ -10,7 +10,8 @@ import {
   JsonRpcResponse,
   WrapperIo
 } from '../types'
-import { pinoLogger, snooze } from '../util'
+import { pinoLogger } from '../util/pinoLogger'
+import { snooze } from '../util/snooze'
 
 const asV2ApiResponse = asObject({
   blockbook: asObject({

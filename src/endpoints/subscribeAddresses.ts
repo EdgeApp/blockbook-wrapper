@@ -11,7 +11,7 @@ import {
   UnsubscribeFunc,
   WrapperIo
 } from '../types'
-import { snooze } from '../util'
+import { snooze } from '../util/snooze'
 import { lastResponse } from './getInfo'
 
 export const asSubscribeAddressesParams = asObject({
