@@ -86,19 +86,21 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
     }
   }
 
-  const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
-    const cleanData = asJsonRpc(data)
-    io.logger.info({ ...cleanData }, `Received ws message`)
-    const method = methods[cleanData.method]
+  const handleWsMessage = async (
+    io: WrapperIo,
+    request: JsonRpc
+  ): Promise<any> => {
+    io.logger.info({ ...request }, `Received ws message`)
+    const method = methods[request.method]
     if (method == null) {
-      throw new Error('Invalid method: ' + cleanData.method)
+      throw new Error('Invalid method: ' + request.method)
     }
-    const out = await method(io, cleanData)
+    const response = await method(io, request)
     io.logger.info({
       msg: `Responded ws message`,
-      data: out
+      data: response
     })
-    return out
+    return response
   }
 
   const io: WrapperIo = {
@@ -120,9 +122,10 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
 
   ws.on('message', (message: Buffer) => {
     const messageString = message.toString()
-    let parsedData
+    let jsonRpcRequest: JsonRpc
     try {
-      parsedData = JSON.parse(messageString)
+      const parsedData = JSON.parse(messageString)
+      jsonRpcRequest = asJsonRpc(parsedData)
       logger.debug({ msg: 'Received JSON', parsedData })
     } catch (err) {
       logger.error({
@@ -131,8 +134,9 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
         messageString
       })
       stopWs(1007, 'Invalid JSON')
+      return
     }
-    handleWsMessage(io, parsedData)
+    handleWsMessage(io, jsonRpcRequest)
       .then(result => {
         const resultString = JSON.stringify(result)
         logger.debug({
@@ -142,7 +146,7 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
         ws.send(resultString, sendErrorHandler)
       })
       .catch((err: Error) => {
-        const id = parsedData?.id
+        const id = jsonRpcRequest.id
         logger.error({
           err,
           where: 'handleWsMessage error',
