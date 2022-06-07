@@ -2,8 +2,7 @@ import { asArray, asObject, asString } from 'cleaners'
 import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
-import { lastResponse } from './getInfo'
+import { config } from '../config'
 import {
   asGetAccountInfo,
   GetAccountInfo,
@@ -11,8 +10,9 @@ import {
   SubscribeAddressResponse,
   UnsubscribeFunc,
   WrapperIo
-} from './types'
-import { snooze } from './util'
+} from '../types'
+import { snooze } from '../util'
+import { lastResponse } from './getInfo'
 
 export const asSubscribeAddressesParams = asObject({
   addresses: asArray(asString)

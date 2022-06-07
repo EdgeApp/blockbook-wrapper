@@ -2,8 +2,8 @@ import { asObject, asString } from 'cleaners'
 import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
-import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
+import { config } from '../config'
+import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
 
 const asSendTransactionParams = asObject({
   hex: asString

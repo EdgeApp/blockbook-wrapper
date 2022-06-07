@@ -1,5 +1,5 @@
-import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
-import { snooze } from './util'
+import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
+import { snooze } from '../util'
 
 export const ping = async (
   io: WrapperIo,

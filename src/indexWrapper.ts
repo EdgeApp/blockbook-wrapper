@@ -2,13 +2,13 @@ import { IncomingMessage } from 'http'
 import { WebSocket, WebSocketServer } from 'ws'
 
 import { config } from './config'
-import { getAccountInfo } from './getAccountInfo'
-import { getAccountUtxo } from './getAccountUtxo'
-import { getInfo, getInfoEngine } from './getInfo'
-import { getTransaction } from './getTransaction'
-import { ping } from './ping'
-import { sendTransaction } from './sendTransaction'
-import { subscribeAddressesEngine } from './subscribeAddresses'
+import { getAccountInfo } from './endpoints/getAccountInfo'
+import { getAccountUtxo } from './endpoints/getAccountUtxo'
+import { getInfo, getInfoEngine } from './endpoints/getInfo'
+import { getTransaction } from './endpoints/getTransaction'
+import { ping } from './endpoints/ping'
+import { sendTransaction } from './endpoints/sendTransaction'
+import { subscribeAddressesEngine } from './endpoints/subscribeAddresses'
 import {
   asJsonRpc,
   GetInfoResponse,

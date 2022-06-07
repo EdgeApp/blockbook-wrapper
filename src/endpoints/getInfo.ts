@@ -2,15 +2,15 @@ import { asNumber, asObject, asString } from 'cleaners'
 import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
+import { config } from '../config'
 import {
   GetInfoEngineParams,
   GetInfoResponse,
   JsonRpc,
   JsonRpcResponse,
   WrapperIo
-} from './types'
-import { pinoLogger, snooze } from './util'
+} from '../types'
+import { pinoLogger, snooze } from '../util'
 
 const asV2ApiResponse = asObject({
   blockbook: asObject({

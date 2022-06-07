@@ -2,9 +2,9 @@ import { asNumber, asObject, asOptional, asString } from 'cleaners'
 import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
-import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
-import { cleanObject } from './util'
+import { config } from '../config'
+import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
+import { cleanObject } from '../util'
 
 export const asGetAccountInfoParams = asObject({
   descriptor: asString,
