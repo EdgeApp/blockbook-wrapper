@@ -1,5 +1,4 @@
 import { asArray, asObject, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
 import { config } from '../config'
@@ -11,6 +10,7 @@ import {
   UnsubscribeFunc,
   WrapperIo
 } from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
 import { snooze } from '../util/snooze'
 import { lastResponse } from './getInfo'
 
@@ -35,38 +35,31 @@ const queryAddress = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/address/${address}`)
   parsed.set('query', queryParams)
-
-  const headers = {
-    'api-key': config.nowNodesApiKey
-  }
-  const options = { method: 'GET', headers: headers }
+  const response = await blockbookFetch(io, parsed.href)
 
   let resultJSON: GetAccountInfo
   io.logger.info({ msg: 'address query init', address, from })
-  const result = await fetch(parsed.href, options).catch(error => ({
-    ok: false,
-    error
-  }))
-  if (result.ok === true) {
-    try {
-      const r = await result.json()
-      resultJSON = asGetAccountInfo(r)
-    } catch (err) {
-      io.logger.error({
-        err,
-        where: 'queryAddress response parsing',
-        address
-      })
-      return
-    }
-  } else {
+
+  if ('error' in response) {
     io.logger.warn({
-      err: result.error,
-      where: 'queryAddress query error response',
+      msg: 'queryAddress failed blockbookFetch',
+      response,
       address
     })
     return
   }
+
+  try {
+    resultJSON = asGetAccountInfo(response.data)
+  } catch (err) {
+    io.logger.error({
+      err,
+      where: 'queryAddress response parsing',
+      address
+    })
+    return
+  }
+
   io.logger.info({ msg: 'address query success', address, resultJSON })
   return resultJSON
 }

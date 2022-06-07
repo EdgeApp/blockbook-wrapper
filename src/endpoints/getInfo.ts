@@ -1,5 +1,4 @@
 import { asNumber, asObject, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
 import { config } from '../config'
@@ -10,6 +9,7 @@ import {
   JsonRpcResponse,
   WrapperIo
 } from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
 import { pinoLogger } from '../util/pinoLogger'
 import { snooze } from '../util/snooze'
 
@@ -64,20 +64,17 @@ export const getInfo = async (
 const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2`)
+  const response = await blockbookFetch(
+    { logger: pinoLogger, sendWs: () => undefined },
+    parsed.href
+  )
 
-  const headers = {
-    'api-key': config.nowNodesApiKey
+  if ('error' in response) {
+    pinoLogger.error({ msg: 'getInfoInner failed blockbookFetch', response })
+    return
   }
-  const options = { method: 'GET', headers: headers }
 
-  let cleanedResult: V2ApiResponse
-  const result = await fetch(parsed.href, options)
-  if (result.ok === true) {
-    const resultJSON = await result.json()
-    cleanedResult = asV2ApiResponse(resultJSON)
-  } else {
-    throw new Error('getInfoInner failed')
-  }
+  const cleanedResult = asV2ApiResponse(response.data)
 
   const { blockbook, backend } = cleanedResult
   // const name = cleanedResult.blockbook.coin

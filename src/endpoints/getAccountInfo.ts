@@ -1,9 +1,9 @@
 import { asNumber, asObject, asOptional, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
 import { config } from '../config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
 import { cleanObject } from '../util/cleanObject'
 
 export const asGetAccountInfoParams = asObject({
@@ -31,24 +31,11 @@ export const getAccountInfo = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/address/${address}`)
   parsed.set('query', queryParams)
-  io.logger.debug({ href: parsed.href }, 'getAccountInfo')
 
-  const headers = {
-    'api-key': config.nowNodesApiKey
-  }
-  const options = { method: 'GET', headers: headers }
+  const response = await blockbookFetch(io, parsed.href)
 
-  let resultJSON
-  const result = await fetch(parsed.href, options)
-  if (result.ok === true) {
-    resultJSON = await result.json()
-    io.logger.debug(resultJSON, 'getAccountInfo')
-  } else {
-    throw new Error('getAccountInfo failed')
-  }
-  const out: JsonRpcResponse = {
+  return {
     id: data.id,
-    data: resultJSON
+    ...response
   }
-  return out
 }

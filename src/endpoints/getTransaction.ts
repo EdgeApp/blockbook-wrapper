@@ -1,9 +1,9 @@
 import { asObject, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
 import { config } from '../config'
 import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
 
 export const asGetTransactionParams = asObject({
   txid: asString
@@ -23,22 +23,10 @@ export const getTransaction = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/tx/${txid}`)
 
-  const headers = {
-    'api-key': config.nowNodesApiKey
-  }
-  const options = { method: 'GET', headers: headers }
+  const response = await blockbookFetch(io, parsed.href)
 
-  let resultJSON
-  const result = await fetch(parsed.href, options)
-  if (result.ok === true) {
-    resultJSON = await result.json()
-    io.logger.debug({ msg: 'getTransaction results', resultJSON })
-  } else {
-    throw new Error('getAccountInfo failed')
-  }
-  const out: JsonRpcResponse = {
+  return {
     id: data.id,
-    data: resultJSON
+    ...response
   }
-  return out
 }
