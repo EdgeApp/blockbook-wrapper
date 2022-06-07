@@ -2,13 +2,13 @@ import { IncomingMessage } from 'http'
 import { WebSocket, WebSocketServer } from 'ws'
 
 import { config } from './config'
-import { getAccountInfo } from './getAccountInfo'
-import { getAccountUtxo } from './getAccountUtxo'
-import { getInfo, getInfoEngine } from './getInfo'
-import { getTransaction } from './getTransaction'
-import { ping } from './ping'
-import { sendTransaction } from './sendTransaction'
-import { subscribeAddressesEngine } from './subscribeAddresses'
+import { getAccountInfo } from './endpoints/getAccountInfo'
+import { getAccountUtxo } from './endpoints/getAccountUtxo'
+import { getInfo, getInfoEngine } from './endpoints/getInfo'
+import { getTransaction } from './endpoints/getTransaction'
+import { ping } from './endpoints/ping'
+import { sendTransaction } from './endpoints/sendTransaction'
+import { subscribeAddressesEngine } from './endpoints/subscribeAddresses'
 import {
   asJsonRpc,
   GetInfoResponse,
@@ -18,7 +18,8 @@ import {
   WrapperIo,
   WsConnection
 } from './types'
-import { logger, makeDate, snooze } from './util'
+import { pinoLogger } from './util/pinoLogger'
+import { snooze } from './util/snooze'
 
 // const CONFIG = require('../config.json')
 
@@ -35,20 +36,18 @@ server.on('connection', (ws: WebSocket, req: IncomingMessage) => {
     const address = socket.remoteAddress
     const port = socket.remotePort
     const addrPort = `${address}:${port}`
-    logger(`Connection made ${addrPort}`)
+    pinoLogger.info({ addrPort }, `New websocket connection`)
 
     const wsc = makeWsConnection(ws, addrPort)
     wsConnections[addrPort] = wsc
-  } catch (e) {
+  } catch (err) {
+    pinoLogger.error({ err, message: 'New websocket connection error ' })
     ws.close(1011, 'Internal error')
   }
 })
 
 const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
-  const logger = (...args): void => {
-    const d = makeDate()
-    console.log(`${d} ${addrPort}`, ...args)
-  }
+  const logger = pinoLogger.child({ addrPort })
 
   let subscribeNewBlockId: string = ''
   let subscribeAddressesStop
@@ -88,19 +87,21 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
     }
   }
 
-  const handleWsMessage = async (io: WrapperIo, data: Object): Promise<any> => {
-    const cleanData = asJsonRpc(data)
-    io.logger(`Received ID:${cleanData.id} Method:${cleanData.method}`)
-    const { params = 'NO_PARAMS' } = cleanData
-    io.logger(` Params:${JSON.stringify(params).slice(0, 75)}`)
-    const method = methods[cleanData.method]
+  const handleWsMessage = async (
+    io: WrapperIo,
+    request: JsonRpc
+  ): Promise<any> => {
+    io.logger.info({ ...request }, `Received ws message`)
+    const method = methods[request.method]
     if (method == null) {
-      throw new Error('Invalid method: ' + cleanData.method)
+      throw new Error('Invalid method: ' + request.method)
     }
-    const out = await method(io, cleanData)
-    io.logger(`Responded to ID:${cleanData.id} Method:${cleanData.method}`)
-    io.logger(`   ${JSON.stringify(out).slice(0, 75)}`)
-    return out
+    const response = await method(io, request)
+    io.logger.info({
+      msg: `Responded ws message`,
+      data: response
+    })
+    return response
   }
 
   const io: WrapperIo = {
@@ -112,42 +113,69 @@ const makeWsConnection = (ws: WebSocket, addrPort: string): WsConnection => {
 
   const sendErrorHandler = (error?: Error): void => {
     if (error != null) {
-      logger('Error sending data to WS', error.message)
+      logger.error({ err: error, msg: 'Error sending data to WS' })
       // Delete connection
       stopWs()
     } else {
-      // logger('Success sending data to WS')
+      logger.debug('Success sending data to WS')
     }
   }
 
   ws.on('message', (message: Buffer) => {
     const messageString = message.toString()
-    let parsedData
+    let jsonRpcRequest: JsonRpc
     try {
-      parsedData = JSON.parse(messageString)
-      // logger('Received JSON:', parsedData)
-    } catch (e) {
-      logger('Invalid JSON:', messageString)
+      const parsedData = JSON.parse(messageString)
+      jsonRpcRequest = asJsonRpc(parsedData)
+      logger.debug({ msg: 'Received JSON', parsedData })
+    } catch (err) {
+      logger.error({
+        err,
+        where: 'Invalid JSON from websocket message',
+        messageString
+      })
       stopWs(1007, 'Invalid JSON')
+      return
     }
-    handleWsMessage(io, parsedData)
+    handleWsMessage(io, jsonRpcRequest)
       .then(result => {
         const resultString = JSON.stringify(result)
-        // logger(resultString)
+        logger.debug({
+          msg: 'Handle websocket message result',
+          resultString
+        })
         ws.send(resultString, sendErrorHandler)
       })
-      .catch((e: Error) => {
-        console.log(e.message)
+      .catch((err: Error) => {
+        const id = jsonRpcRequest.id
+        logger.error({
+          err,
+          where: 'handleWsMessage error',
+          id
+        })
+        if (id != null) {
+          const errorMessage: string =
+            err instanceof Error ? err.message : 'Unknown error'
+          const resultString = JSON.stringify({
+            id,
+            data: {
+              error: {
+                message: `Failed to wrap JSON-RPC call: ${errorMessage}`
+              }
+            }
+          })
+          ws.send(resultString, sendErrorHandler)
+        }
       })
   })
 
-  ws.on('close', error => {
-    logger('Websocket close', error)
+  ws.on('close', code => {
+    logger.info({ code, msg: 'Websocket close' })
     stopWs()
   })
 
-  ws.on('error', error => {
-    logger('Websocket error', error)
+  ws.on('error', err => {
+    logger.error({ err, msg: 'Websocket error' })
     stopWs()
   })
 

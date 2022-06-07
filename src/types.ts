@@ -7,6 +7,7 @@ import {
   asString,
   asUnknown
 } from 'cleaners'
+import { Logger } from 'pino'
 
 export const asJsonRpc = asObject({
   id: asString,
@@ -14,16 +15,23 @@ export const asJsonRpc = asObject({
   params: asUnknown
 })
 export type JsonRpc = ReturnType<typeof asJsonRpc>
-export interface JsonRpcResponse {
+export interface JsonRpcSuccessResponse {
   id: string
   data: Object
 }
+export interface JsonRpcErrorResponse {
+  id: string
+  error: {
+    message: string
+  }
+}
+export type JsonRpcResponse = JsonRpcSuccessResponse | JsonRpcErrorResponse
 export interface MethodMap {
   [methodName: string]: (...args) => Promise<JsonRpcResponse>
 }
 
 export interface WrapperIo {
-  logger: (...args) => void
+  logger: Logger<any>
   sendWs: (arg: Object) => void
 }
 

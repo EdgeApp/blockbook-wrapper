@@ -1,16 +1,17 @@
 import { asNumber, asObject, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
+import { config } from '../config'
 import {
   GetInfoEngineParams,
   GetInfoResponse,
   JsonRpc,
   JsonRpcResponse,
   WrapperIo
-} from './types'
-import { makeDate, snooze } from './util'
+} from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
+import { pinoLogger } from '../util/pinoLogger'
+import { snooze } from '../util/snooze'
 
 const asV2ApiResponse = asObject({
   blockbook: asObject({
@@ -60,28 +61,20 @@ export const getInfo = async (
   return out
 }
 
-const log = (...args): void => {
-  const d = makeDate()
-  console.log(`${d}`, ...args)
-}
-
 const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2`)
+  const response = await blockbookFetch(
+    { logger: pinoLogger, sendWs: () => undefined },
+    parsed.href
+  )
 
-  const headers = {
-    'api-key': config.nowNodesApiKey
+  if ('error' in response) {
+    pinoLogger.error({ msg: 'getInfoInner failed blockbookFetch', response })
+    return
   }
-  const options = { method: 'GET', headers: headers }
 
-  let cleanedResult: V2ApiResponse
-  const result = await fetch(parsed.href, options)
-  if (result.ok === true) {
-    const resultJSON = await result.json()
-    cleanedResult = asV2ApiResponse(resultJSON)
-  } else {
-    throw new Error('getInfoInner failed')
-  }
+  const cleanedResult = asV2ApiResponse(response.data)
 
   const { blockbook, backend } = cleanedResult
   // const name = cleanedResult.blockbook.coin
@@ -102,7 +95,9 @@ const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
     lastResponse.bestHeight = blockbook.bestHeight
     lastResponse.bestHash = backend.bestBlockHash
 
-    log(`New blockHeight ${lastResponse.bestHeight} ${lastResponse.bestHash}`)
+    pinoLogger.info(
+      `New blockHeight ${lastResponse.bestHeight} ${lastResponse.bestHash}`
+    )
     const out = { ...lastResponse }
     cb(out)
   }
@@ -111,7 +106,7 @@ const getInfoInner = async (cb: GetInfoEngineParams): Promise<void> => {
 export const getInfoEngine = (cb: GetInfoEngineParams): void => {
   getInfoInner(cb)
     .catch(e => {
-      log(e)
+      pinoLogger.error(e)
     })
     .finally(() => {
       setTimeout(() => {

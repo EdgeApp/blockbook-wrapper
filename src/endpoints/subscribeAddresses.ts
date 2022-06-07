@@ -1,9 +1,7 @@
 import { asArray, asObject, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
-import { lastResponse } from './getInfo'
+import { config } from '../config'
 import {
   asGetAccountInfo,
   GetAccountInfo,
@@ -11,8 +9,10 @@ import {
   SubscribeAddressResponse,
   UnsubscribeFunc,
   WrapperIo
-} from './types'
-import { snooze } from './util'
+} from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
+import { snooze } from '../util/snooze'
+import { lastResponse } from './getInfo'
 
 export const asSubscribeAddressesParams = asObject({
   addresses: asArray(asString)
@@ -35,33 +35,32 @@ const queryAddress = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/address/${address}`)
   parsed.set('query', queryParams)
-
-  const headers = {
-    'api-key': config.nowNodesApiKey
-  }
-  const options = { method: 'GET', headers: headers }
+  const response = await blockbookFetch(io, parsed.href)
 
   let resultJSON: GetAccountInfo
-  // io.logger(`queryAddress ${address} ${from.toString()}`)
-  const result = await fetch(parsed.href, options).catch(error => ({
-    ok: false,
-    error
-  }))
-  if (result.ok === true) {
-    try {
-      const r = await result.json()
-      resultJSON = asGetAccountInfo(r)
-    } catch (err) {
-      // io.logger(`queryAddress ERROR ${address} ${err}`)
-      return
-    }
-  } else {
-    // io.logger(`queryAddress FAIL ${address} ${result.error}`)
+  io.logger.info({ msg: 'address query init', address, from })
+
+  if ('error' in response) {
+    io.logger.warn({
+      msg: 'queryAddress failed blockbookFetch',
+      response,
+      address
+    })
     return
   }
-  // io.logger(
-  //   `queryAddress SUCCESS ${address} ${JSON.stringify(resultJSON).slice(0, 30)}`
-  // )
+
+  try {
+    resultJSON = asGetAccountInfo(response.data)
+  } catch (err) {
+    io.logger.error({
+      err,
+      where: 'queryAddress response parsing',
+      address
+    })
+    return
+  }
+
+  io.logger.info({ msg: 'address query success', address, resultJSON })
   return resultJSON
 }
 
@@ -101,11 +100,11 @@ export const subscribeAddressesEngine = (
                 tx
               }
               const out = { id, data: dataField }
-              io.logger(
-                `subscribeAddresses New tx at ${blockHeight.toString()} ${address} ${
-                  tx.txid
-                }`
-              )
+              io.logger.info({
+                msg: 'subscribeAddresses new tx',
+                blockHeight,
+                address
+              })
               io.sendWs(out)
             }
           }
@@ -117,7 +116,9 @@ export const subscribeAddressesEngine = (
       doStop = stop
     }
   }
-  looper().catch(e => io.logger(e))
+  looper().catch(err =>
+    io.logger.error({ err, where: 'subscribeAddressesEngine looper crash' })
+  )
 
   return () => {
     stop = true

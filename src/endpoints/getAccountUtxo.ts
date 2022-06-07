@@ -1,10 +1,10 @@
 import { asBoolean, asObject, asOptional, asString } from 'cleaners'
-import fetch from 'node-fetch'
 import parse from 'url-parse'
 
-import { config } from './config'
-import { JsonRpc, JsonRpcResponse, WrapperIo } from './types'
-import { cleanObject } from './util'
+import { config } from '../config'
+import { JsonRpc, JsonRpcResponse, WrapperIo } from '../types'
+import { blockbookFetch } from '../util/blockbookFetch'
+import { cleanObject } from '../util/cleanObject'
 
 export const asGetAccountInfoParams = asObject({
   descriptor: asString,
@@ -32,32 +32,12 @@ export const getAccountUtxo = async (
   const parsed = parse(server, true)
   parsed.set('pathname', `api/v2/utxo/${address}`)
   parsed.set('query', queryParams)
-  // io.logger('getAccountUtxo href:', parsed.href)
+  io.logger.debug('getAccountUtxo href:', parsed.href)
 
-  const headers = {
-    'api-key': config.nowNodesApiKey
-  }
-  const options = { method: 'GET', headers: headers }
+  const response = await blockbookFetch(io, parsed.href)
 
-  let resultJSON
-  let result
-  try {
-    result = await fetch(parsed.href, options)
-  } catch (e) {
-    io.logger(e)
-    throw e
-  }
-  if (result.ok === true) {
-    resultJSON = await result.json()
-    // io.logger(JSON.stringify(resultJSON, null, 2))
-  } else {
-    const r = await result.text()
-    io.logger(r)
-    throw new Error('getAccountUtxo failed')
-  }
-  const out: JsonRpcResponse = {
+  return {
     id: data.id,
-    data: resultJSON
+    ...response
   }
-  return out
 }
